@@ -42,9 +42,16 @@ public class MyServer extends AbstractChatServer {
 			
 			new Thread("clienthandler") {
 				public void run () {
-					Socket client 	= socket.accept();
-					registerClient(client);
-					handleClient(client);
+					Socket client;
+					try {
+						client = socket.accept();
+						Scanner in = new Scanner(client.getOutputStream());
+						registerClient(client);
+						handleClient(client);
+					} catch (IOException e) {
+						gui.pushConsoleMessage("Server konnte nicht gestartet werden.");
+						e.printStackTrace();
+					}
 				}
 			}.start();
 		} catch (IOException e) {

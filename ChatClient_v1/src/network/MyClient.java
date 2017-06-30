@@ -23,9 +23,7 @@ public class MyClient extends AbstractChatClient {
 	}
 	
 	private void waitForServer() {
-		String serverMessage = fromServer.next();
 		
-		this.gui.pushChatMessage(serverMessage);
 	}
 
 	@Override
@@ -39,7 +37,13 @@ public class MyClient extends AbstractChatClient {
 			fromServer 	= new Scanner(server.getInputStream());
 			toServer 	= new PrintWriter(server.getOutputStream(), true);
 			
-			waitForServer();
+			new Thread("client") {
+				public void run () {
+					String servermessage = fromServer.next();
+					
+					gui.pushChatMessage("Server: " + servermessage);
+				}
+			}.start();
 		} catch (NumberFormatException | IOException e) {
 			e.printStackTrace();
 		}
