@@ -1,5 +1,6 @@
 package network;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
@@ -13,7 +14,7 @@ public class MyServer extends AbstractChatServer {
 	
 	ServerSocket socket;
 	int port;
-	HashMap<String, Socket> clients;
+	ChatServerThread server;
 
 	public MyServer(ServerGUI gui) {
 		super(gui);
@@ -21,57 +22,25 @@ public class MyServer extends AbstractChatServer {
 
 	@Override
 	public void receiveConsoleCommand(String command, String msg) {
-		// TODO Auto-generated method stub
-		
-	}
-	
-	void handleClient (Socket client) {
-		
-	}
-	
-	private void registerClient(Socket client) {
 		
 	}
 
 	@Override
 	public void start(String port) {
 		this.port = Integer.parseInt(port);
-		try {
-			this.socket 		= new ServerSocket(this.port);
-			this.gui.pushConsoleMessage("Server gestartet: localhost:" + port);
-			
-			new Thread("clienthandler") {
-				public void run () {
-					Socket client;
-					try {
-						client = socket.accept();
-						Scanner in = new Scanner(client.getOutputStream());
-						registerClient(client);
-						handleClient(client);
-					} catch (IOException e) {
-						gui.pushConsoleMessage("Server konnte nicht gestartet werden.");
-						e.printStackTrace();
-					}
-				}
-			}.start();
-		} catch (IOException e) {
-			
-			this.gui.pushConsoleMessage("Server konnte nicht gestartet werden.");
-			e.printStackTrace();
-		}
+		this.server = new ChatServerThread(this.port, gui);
+		this.server.start();
 	}
 		
 
 	@Override
 	public void stop() {
-		// TODO Auto-generated method stub
-		
+		this.server.shutdown();
 	}
 
 	@Override
 	public void terminate() {
-		// TODO Auto-generated method stub
-		
+		this.server.shutdown();
 	}
 
 }

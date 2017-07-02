@@ -1,6 +1,8 @@
 package network;
 
 import java.net.Socket;
+import java.time.Instant;
+import java.util.Date;
 import java.util.Scanner;
 import java.io.*;
 
@@ -8,10 +10,10 @@ import fx.ClientGUI;
 
 public class MyClient extends AbstractChatClient {
 	
-	Socket 	server 			= null;
-	Scanner fromServer 		= null;
-	Writer 	toServer 		= null;
-	boolean running 		= false;
+	Socket 	server 				= null;
+	//Scanner fromServer 			= null;
+	//PrintWriter toServer 		= null;
+	boolean running 			= false;
 
 	public MyClient(ClientGUI gui) {
 		super(gui);
@@ -19,11 +21,21 @@ public class MyClient extends AbstractChatClient {
 
 	@Override
 	public void sendChatMessage(String msg) {
-		System.out.println(msg);
-	}
-	
-	private void waitForServer() {
-		
+		PrintWriter toServer;
+		try {
+			toServer = new PrintWriter(server.getOutputStream(), true);
+			if (running) {
+				String time = Instant.now().toString();
+				String toOut = "name=" + uName + "\ntime=" + time + "\nmsg=" + msg + "\n#ENDOF";
+				System.out.println("raus:\n" + toOut);
+				toServer.println(toOut);
+				//toServer.flush();		
+				toServer.flush();
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	@Override
@@ -34,16 +46,19 @@ public class MyClient extends AbstractChatClient {
 			
 			server.setKeepAlive(true);
 			
-			fromServer 	= new Scanner(server.getInputStream());
-			toServer 	= new PrintWriter(server.getOutputStream(), true);
+			//fromServer 	= new Scanner(server.getInputStream());
+			//toServer 	= new PrintWriter(server.getOutputStream(), true);
 			
-			new Thread("client") {
-				public void run () {
-					String servermessage = fromServer.next();
-					
-					gui.pushChatMessage("Server: " + servermessage);
-				}
-			}.start();
+//			new Thread("client") {
+//				public void run () {
+//					while (true) {
+//						//String servermessage = fromServer.next();
+//						
+//						//gui.pushChatMessage("Server: " + servermessage);
+//					}
+//						
+//				}
+//			}.start();
 		} catch (NumberFormatException | IOException e) {
 			e.printStackTrace();
 		}
@@ -51,7 +66,12 @@ public class MyClient extends AbstractChatClient {
 
 	@Override
 	public void disconnect() {
-		// TODO Auto-generated method stub
+		running = false;
+		try {
+			server.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		
 	}
 
