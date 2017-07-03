@@ -12,6 +12,7 @@ public class Client {
 	private HashMap<PERMISSION, Boolean> permissions = new HashMap<PERMISSION, Boolean>();
 	private Socket connection;
 	private int id;
+	private Thread connectionHandler;
 	
 	private static int ID_GEN = 0;
 	
@@ -21,10 +22,11 @@ public class Client {
 	 * @param name
 	 * @param connection
 	 */
-	public Client (String name, Socket connection) {
+	public Client (String name, Socket connection, Thread handler) {
 		this.name = name;
 		this.connection = connection;
 		this.id = ID_GEN;
+		this.connectionHandler = handler;
 		
 		ID_GEN += 1;
 		

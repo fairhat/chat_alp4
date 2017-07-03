@@ -13,19 +13,25 @@ import fx.ServerGUI;
 public class ServerConnection extends Thread {
 	
 	private class SendThread extends Thread {
+		Semaphore queue = new Semaphore(0);
 		
-		PrintWriter stream;
-		
-		public SendThread (PrintWriter stream) {
-			this.stream = stream;
-		}
 		
 		public void run () {
-			active = true;
+			queue.release();
 		}
 		
-		public void pushMessage (ClientMessage message) {
-			stream.
+		public void pushMessage (Socket so, String msg) {
+			try {
+				queue.acquire();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			try {
+				PrintWriter prw = new PrintWriter(so.getOutputStream(), true);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+						
 		}
 	}
 	
@@ -48,13 +54,12 @@ public class ServerConnection extends Thread {
 				try {
 					input = clientIn.readLine();
 					
-					if (!input.startsWith("#STARTOF")) {
-						
+					if (input.startsWith("#STARTOF")) {
+						while (!(input = clientIn.readLine()).startsWith("#ENDOF")) {
+							msg += input + "\n";
+						}						
 					}
 					
-					while (!(input = clientIn.readLine()).startsWith("#ENDOF")) {
-						msg += input + "\n";
-					}
 				} catch (IOException e) {
 					e.printStackTrace();
 				}		
@@ -68,6 +73,8 @@ public class ServerConnection extends Thread {
 	Socket client;
 	ServerGUI gui;
 	ClientManager manager;
+	Thread sender = null;
+	Thread receiver = null;
 	boolean active = false;
 	
 	public ServerConnection (Socket client, ClientManager manager, ServerGUI gui) {
@@ -85,7 +92,14 @@ public class ServerConnection extends Thread {
 	}
 	
 	private void chat (ClientMessage message) {
+		Client[] clients = manager.getAllClients();
 		
+		for (Client client : clients) {
+			Socket conn = client.getConnection();
+			String msg = ClientMessage.convertMessageFromClient(message.clientName, message.timestamp, message.message);
+			
+			
+		}
 	}
 	
 	private void whisper (ClientMessage message) {
@@ -111,7 +125,7 @@ public class ServerConnection extends Thread {
 	
 	@Override
 	public void run () {
-		new ReceiveThread().start();
-		new SendThread().start();
+		receiver = new ReceiveThread().start();
+		sender = new SendThread().start();
 	}
 }

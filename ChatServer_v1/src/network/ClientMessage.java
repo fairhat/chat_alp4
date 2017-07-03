@@ -37,7 +37,7 @@ public class ClientMessage {
 		
 		for (String line : lines) {
 			String[] li = line.split("=", 2);
-			System.out.println("li => " + li[0] + " <= " + li[1]);
+			//System.out.println("li => " + li[0] + " <= " + li[1]);
 			if (li[0].equals("name")) {
 				clientName = li[1];
 			}
@@ -50,6 +50,17 @@ public class ClientMessage {
 				message = li[1];
 			}
 		}
+	}
+	
+	public static String convertMessageFromClient (String clientName, Instant time, String message) {
+		String timeStr = time.toString();
+		
+		return 		"#STARTOF"
+				+ 	"\nname=" + clientName
+				+	" \ntime=" + timeStr
+				+	"\nmsg="	+ message
+				+	"\n#ENDOF"
+		;
 	}
 	
 	public String toString () {

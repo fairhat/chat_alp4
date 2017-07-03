@@ -26,7 +26,7 @@ public class MyClient extends AbstractChatClient {
 			toServer = new PrintWriter(server.getOutputStream(), true);
 			if (running) {
 				String time = Instant.now().toString();
-				String toOut = "name=" + uName + "\ntime=" + time + "\nmsg=" + msg + "\n#ENDOF";
+				String toOut = "#STARTOF\nname=" + uName + "\ntime=" + time + "\nmsg=" + msg + "\n#ENDOF";
 				System.out.println("raus:\n" + toOut);
 				toServer.println(toOut);
 				//toServer.flush();		

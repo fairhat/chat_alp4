@@ -18,6 +18,10 @@ public class ClientManager {
 		return list.get(name);
 	}
 	
+	public Client[] getAllClients () {
+		return list.values().toArray(new Client[0]);
+	}
+	
 	public void registerClient (Client client) {
 		if (!hasClient(client.getName())) {
 			list.put(client.getName(), client);			
