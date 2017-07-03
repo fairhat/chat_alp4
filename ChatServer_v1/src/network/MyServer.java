@@ -1,20 +1,13 @@
 package network;
 
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.HashMap;
-import java.util.Scanner;
-
 import fx.ServerGUI;
 
 public class MyServer extends AbstractChatServer {
 	
-	ServerSocket socket;
-	int port;
-	ChatServerThread server;
+	TCPServer server;
+	TCPController controller;
+	boolean running = false;
+	
 
 	public MyServer(ServerGUI gui) {
 		super(gui);
@@ -26,21 +19,26 @@ public class MyServer extends AbstractChatServer {
 	}
 
 	@Override
-	public void start(String port) {
-		this.port = Integer.parseInt(port);
-		this.server = new ChatServerThread(this.port, gui);
+	public void start (String port) {
+		running = true;
+		int prt = Integer.parseInt(port);
+		
+		this.controller = TCPController.init(this.gui);
+		this.server = new TCPServer(prt);
 		this.server.start();
 	}
 		
 
 	@Override
-	public void stop() {
-		this.server.shutdown();
+	public void stop () {
+		if (running) this.server.shutdown();
+		running = false;
 	}
 
 	@Override
-	public void terminate() {
-		this.server.shutdown();
+	public void terminate () {
+		if(running) this.server.shutdown();
+		running = false;
 	}
 
 }

@@ -85,9 +85,9 @@ public class ServerConnection extends Thread {
 	
 	private void login (ClientMessage message) {
 		if (!manager.hasClient(message.clientName)) {
-			Client clnt = new Client(message.clientName, client);
-			manager.registerClient(clnt);
-			gui.addClient(clnt.getId(), clnt.getName());
+//			Client clnt = new Client(message.clientName, client);
+//			manager.registerClient(clnt);
+//			gui.addClient(clnt.getId(), clnt.getName());
 		}
 	}
 	
@@ -125,7 +125,7 @@ public class ServerConnection extends Thread {
 	
 	@Override
 	public void run () {
-		receiver = new ReceiveThread().start();
-		sender = new SendThread().start();
+//		receiver = new ReceiveThread().start();
+//		sender = new SendThread().start();
 	}
 }
