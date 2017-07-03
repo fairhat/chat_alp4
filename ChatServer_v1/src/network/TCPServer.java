@@ -1,6 +1,7 @@
 package network;
 
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -37,6 +38,7 @@ public class TCPServer extends Thread {
 		
 		try {
 			this.socket = new ServerSocket(this.port);
+			
 			this.cntrl.signal("Server gestartet: localhost:" + this.port);
 		} catch (IOException e) {
 			this.cntrl.signalError("Server konnte nicht gestartet werden.");
@@ -54,8 +56,7 @@ public class TCPServer extends Thread {
 				TCPClient handler = new TCPClient(client);
 				this.pool.execute(handler);
 			} catch (IOException e) {
-				this.cntrl.signal("Ein Client wurde abgemeldet.");
-				e.printStackTrace();
+				//
 			}
 		}
 	}
@@ -64,7 +65,9 @@ public class TCPServer extends Thread {
 		this.cntrl.signal("Server wird beendet.");
 		this.running = false;
 		
-		this.pool.shutdownNow();
+		System.out.println("shutdown");
+		mngr.shutdown();
+		this.pool.shutdown();
 		
 		try {
 			this.socket.close();

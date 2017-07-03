@@ -11,8 +11,6 @@ public class MessageProtocol {
 	Instant timestamp;
 	String message;
 	COMMAND intent;
-	String to;
-	String sanitizedMessage = "";
 	
 	static COMMAND getCommand (String msg) {
 		
@@ -50,48 +48,29 @@ public class MessageProtocol {
 		}
 		
 		intent = getCommand(message);
-		
-		if (intent == COMMAND.WHISPER) {
-			String cpy = message;
-			
-			int endOfCommand = message.indexOf(" ");
-			
-			String withoutCmd = cpy.substring(endOfCommand + 1);
-			int nextDelimiter = withoutCmd.indexOf(" ");
-			String userName = withoutCmd.substring(0, nextDelimiter);
-			
-			String withoutUsername = withoutCmd.substring(nextDelimiter);
-			
-			sanitizedMessage = withoutUsername;
-			to = userName;
-		}
+	}
+	
+	public MessageProtocol (String name, String time, String message) {
+		this.clientName = name;
+		this.timestamp = Instant.parse(time);
+		this.message = message;
 	}
 	
 	public static MessageProtocol parse (String msg) {
 		return new MessageProtocol(msg);
 	}
 	
-	public static String convertToString (MessageProtocol msg, boolean sanitized) {
-		
-		String message = msg.message;
+	public static String convertToString (MessageProtocol msg) {
 		String time = msg.timestamp.toString();
-		
-		if (sanitized) {
-			message = msg.sanitizedMessage;
-		}
 		
 		return		"#STARTOF\n"
 				+	"name=" + msg.clientName + "\n"
 				+	"time=" + time + "\n"
-				+	"msg=" 	+ message + "\n"
+				+	"msg=" 	+ msg.message + "\n"
 				+	"#ENDOF";
 	}
 	
-	public String toSanitizedString () {
-		return MessageProtocol.convertToString(this, true);
-	}
-	
 	public String toString () {
-		return MessageProtocol.convertToString(this, false);
+		return MessageProtocol.convertToString(this);
 	}
 }

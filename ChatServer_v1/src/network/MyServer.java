@@ -7,7 +7,6 @@ public class MyServer extends AbstractChatServer {
 	TCPServer server;
 	TCPController controller;
 	boolean running = false;
-	
 
 	public MyServer(ServerGUI gui) {
 		super(gui);
@@ -24,11 +23,11 @@ public class MyServer extends AbstractChatServer {
 		int prt = Integer.parseInt(port);
 		
 		this.controller = TCPController.init(this.gui);
+		
 		this.server = new TCPServer(prt);
 		this.server.start();
 	}
-		
-
+	
 	@Override
 	public void stop () {
 		if (running) this.server.shutdown();

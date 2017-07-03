@@ -14,7 +14,7 @@ public class TCPController {
 	
 	private TCPController (ServerGUI gui) {
 		this.gui = gui;
-		queue.release();
+		//queue.release();
 	}
 	
 	public static TCPController init (ServerGUI gui) {
@@ -48,10 +48,56 @@ public class TCPController {
 	public void handleMessage(TCPClient client, String message) {
 		if (message.length() == 0) { return; }
 		
+		MessageProtocol msg = parseMessage(message);
+		
+		if (msg.intent == MessageProtocol.COMMAND.LOGIN) {
+			login(client, msg);
+		}
+		
+		if (msg.intent == MessageProtocol.COMMAND.CHAT) {
+			chat(msg);
+		}
+		
+		if (msg.intent == MessageProtocol.COMMAND.WHISPER) {
+			whisper(client, msg);
+		}
+	}
+	
+	public void whisper (TCPClient client, MessageProtocol msg) {
+		TCPClient receiver = manager.getClientByName(msg.to);
+		
+		receiver.pushMessage(msg, true);
+		client.pushMessage(msg, true);
+	}
+	
+	public void chat (MessageProtocol msg) {
 		TCPClient[] clients = manager.getAllClients();
 		
-		for (TCPClient c : clients) {
-			c.pushMessage(parseMessage(message));
+		for (TCPClient client : clients) {
+			client.pushMessage(msg);
 		}
+	}
+	
+	public void login(TCPClient client, MessageProtocol msg) {
+		client.setUsername(msg.clientName);
+		if (!manager.hasClient(client)) {
+			gui.addClient(client.getID(), client.getUsername());
+			manager.addClient(client);
+		}
+	}
+	
+	public void logout(TCPClient client) {
+		if (manager.hasClient(client.getID())) {
+			gui.removeClient(client.getID());
+			manager.deleteClient(client.getID());
+		}
+	}
+	
+	public void update(TCPClient client, MessageProtocol msg) {
+		gui.removeClient(client.getID());
+		String oldUsername = client.getUsername();
+		client.setUsername(msg.clientName);
+		manager.updateClient(oldUsername, client);
+		gui.addClient(client.getID(), client.getUsername());
 	}
 }

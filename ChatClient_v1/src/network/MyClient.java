@@ -2,17 +2,59 @@ package network;
 
 import java.net.Socket;
 import java.time.Instant;
-import java.util.Date;
-import java.util.Scanner;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
+import java.util.Locale;
 import java.io.*;
 
 import fx.ClientGUI;
 
 public class MyClient extends AbstractChatClient {
 	
+	DateTimeFormatter formatter =
+		    DateTimeFormatter.ofLocalizedDateTime( FormatStyle.SHORT )
+		                     .withLocale( Locale.GERMANY )
+		                     .withZone( ZoneId.systemDefault() );
+	
+	private class ReceiveThread extends Thread {
+		
+		@Override
+		public void run() {
+			BufferedReader reader = null;
+			try {
+				reader = new BufferedReader(new InputStreamReader(server.getInputStream()));
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			
+			if (reader != null) {
+				while (!server.isClosed()) {
+					String msg = "";
+					String input;
+					try {
+						input = reader.readLine();
+						
+						if (input.startsWith("#STARTOF")) {
+							while (!(input = reader.readLine()).startsWith("#ENDOF")) {
+								msg += input + "\n";
+							}						
+						}
+						
+						MessageProtocol mp = MessageProtocol.parse(msg);
+						String chatMsg = "[" + formatter.format(mp.timestamp) + "] " + mp.clientName + ": " + mp.message;
+						gui.pushChatMessage(chatMsg);
+					} catch (IOException e) {
+						//e.printStackTrace();
+					}
+				}
+			}
+		}
+	}
+	
 	Socket 	server 				= null;
-	//Scanner fromServer 			= null;
-	//PrintWriter toServer 		= null;
+	ReceiveThread fromServer 	= null;
+	PrintWriter toServer 		= null;
 	boolean running 			= false;
 
 	public MyClient(ClientGUI gui) {
@@ -21,64 +63,71 @@ public class MyClient extends AbstractChatClient {
 
 	@Override
 	public void sendChatMessage(String msg) {
-		PrintWriter toServer;
 		try {
-			toServer = new PrintWriter(server.getOutputStream(), true);
 			if (running) {
+				if (toServer == null) { toServer = new PrintWriter(server.getOutputStream(), true); }
 				String time = Instant.now().toString();
 				String toOut = "#STARTOF\nname=" + uName + "\ntime=" + time + "\nmsg=" + msg + "\n#ENDOF";
-				System.out.println("raus:\n" + toOut);
+
 				toServer.println(toOut);
-				//toServer.flush();		
+	
 				toServer.flush();
 			}
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 
 	@Override
 	public void connect(String address, String port) {
-		try {
-			server 		= new Socket(address, Integer.parseInt(port));
-			running 	= true;
+		if (server == null && !running) {
+			try {
+				server 		= new Socket(address, Integer.parseInt(port));
+				running 	= true;
+				
+				gui.pushChatMessage("Mit dem Server verbunden.");
+				
+				server.setKeepAlive(true);
+				new ReceiveThread().start();
+				
+				try {
+					if (toServer == null) { toServer = new PrintWriter(server.getOutputStream(), true); }
+					if (running) {
+						String time = Instant.now().toString();
+						String toOut = "#STARTOF\nname=" + uName + "\ntime=" + time + "\nmsg=/login\n#ENDOF";
+
+						toServer.println(toOut);
 			
-			server.setKeepAlive(true);
-			
-			//fromServer 	= new Scanner(server.getInputStream());
-			//toServer 	= new PrintWriter(server.getOutputStream(), true);
-			
-//			new Thread("client") {
-//				public void run () {
-//					while (true) {
-//						//String servermessage = fromServer.next();
-//						
-//						//gui.pushChatMessage("Server: " + servermessage);
-//					}
-//						
-//				}
-//			}.start();
-		} catch (NumberFormatException | IOException e) {
-			e.printStackTrace();
+						toServer.flush();
+					}
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			} catch (NumberFormatException | IOException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
 	@Override
 	public void disconnect() {
-		running = false;
-		try {
-			server.close();
-		} catch (IOException e) {
-			e.printStackTrace();
+		if (server != null && !server.isClosed()) {			
+			sendChatMessage("/logout");
+			running = false;
+			gui.pushChatMessage("Server Verbindung getrennt.");
+			try {
+				server.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
-		
 	}
 
 	@Override
 	public void terminate() {
-		// TODO Auto-generated method stub
-		
+		if (running) {
+			disconnect();
+		}
 	}
 
 }
