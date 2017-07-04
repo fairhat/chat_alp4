@@ -16,7 +16,7 @@ public class ServerFX extends Application {
 	 * Default port for faster testing. This port will be written to the gui
 	 * whenever the program starts.
 	 */
-	final static private String defaultPort = "13337";
+	final static private String defaultPort = "1337";
 	
 	
 	public static void main(String[] args) {

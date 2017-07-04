@@ -4,7 +4,7 @@ import java.time.Instant;
 
 public class MessageProtocol {
 	enum COMMAND {
-		WHISPER, CHAT, LOGIN
+		WHISPER, CHAT, LOGIN, SWITCHNAME
 	}
 	
 	String clientName;
@@ -25,9 +25,19 @@ public class MessageProtocol {
 			if (msg.startsWith("/l") || msg.startsWith("/login")) {
 				return COMMAND.LOGIN;
 			}
+			
+			if (msg.startsWith("/r") || msg.startsWith("/rename")) {
+				return COMMAND.SWITCHNAME;
+			}
 		}
 		
 		return COMMAND.CHAT;
+	}
+	
+	public MessageProtocol (String name, String time, String message) {
+		this.clientName = name;
+		this.timestamp = Instant.parse(time);
+		this.message = message;
 	}
 	
 	public MessageProtocol (String msg) {
@@ -62,7 +72,7 @@ public class MessageProtocol {
 			
 			String withoutUsername = withoutCmd.substring(nextDelimiter);
 			
-			sanitizedMessage = withoutUsername;
+			sanitizedMessage = "*PRIVATNACHRICHT* " + withoutUsername;
 			to = userName;
 		}
 	}

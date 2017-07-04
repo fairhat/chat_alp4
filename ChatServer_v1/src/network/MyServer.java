@@ -15,6 +15,21 @@ public class MyServer extends AbstractChatServer {
 	@Override
 	public void receiveConsoleCommand(String command, String msg) {
 		
+		if (command.startsWith("/m") || command.startsWith("/mute")) {
+			int delim = msg.indexOf(" ");
+			
+			String userName = msg.substring(0, delim);
+			
+			int time = Integer.parseInt(msg.substring(delim + 1));
+			
+			controller.mute(userName, time);
+		}
+		
+		if (command.startsWith("/e") || command.startsWith("/exclude")) {
+			String userName = msg;
+			
+			controller.kick(userName);
+		}
 	}
 
 	@Override

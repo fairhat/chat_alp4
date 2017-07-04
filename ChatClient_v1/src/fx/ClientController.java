@@ -126,6 +126,7 @@ public class ClientController implements ClientGUI {
 			if (splitMsg.length > 1) {
 				client.setUName(splitMsg[1]);
 				view.getUNameLB().setText(splitMsg[1]);
+				client.rename();
 			} else {
 				pushChatMessage("INFO: Please use \"/n(ame) my_new_Name\" to change your Name");
 			}

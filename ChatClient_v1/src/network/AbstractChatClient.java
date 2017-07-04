@@ -41,6 +41,8 @@ public abstract class AbstractChatClient {
 	public String getUName() {
 		return uName;
 	}
+	
+	public abstract void rename();
 
 	/**
 	 * Sends the message to the server. Called whenever the user enters and

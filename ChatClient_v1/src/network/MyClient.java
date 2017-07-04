@@ -9,6 +9,7 @@ import java.util.Locale;
 import java.io.*;
 
 import fx.ClientGUI;
+import javafx.scene.paint.Color;
 
 public class MyClient extends AbstractChatClient {
 	
@@ -18,6 +19,8 @@ public class MyClient extends AbstractChatClient {
 		                     .withZone( ZoneId.systemDefault() );
 	
 	private class ReceiveThread extends Thread {
+		
+		boolean isActive = false;
 		
 		@Override
 		public void run() {
@@ -29,11 +32,17 @@ public class MyClient extends AbstractChatClient {
 			}
 			
 			if (reader != null) {
-				while (!server.isClosed()) {
+				isActive = true;
+				while (isActive) {
 					String msg = "";
 					String input;
 					try {
 						input = reader.readLine();
+						
+						if (input == null) {
+							disconnected();
+							return;
+						}
 						
 						if (input.startsWith("#STARTOF")) {
 							while (!(input = reader.readLine()).startsWith("#ENDOF")) {
@@ -49,6 +58,10 @@ public class MyClient extends AbstractChatClient {
 					}
 				}
 			}
+		}
+		
+		public void shutdown() {
+			isActive = false;
 		}
 	}
 	
@@ -77,6 +90,12 @@ public class MyClient extends AbstractChatClient {
 			e.printStackTrace();
 		}
 	}
+	
+	public void rename() {
+		if (running) {
+			sendChatMessage("/rename");
+		}
+	}
 
 	@Override
 	public void connect(String address, String port) {
@@ -86,9 +105,12 @@ public class MyClient extends AbstractChatClient {
 				running 	= true;
 				
 				gui.pushChatMessage("Mit dem Server verbunden.");
+				gui.setSymbolColor(Color.GREEN);
 				
 				server.setKeepAlive(true);
-				new ReceiveThread().start();
+				fromServer = new ReceiveThread();
+				fromServer.start();
+				
 				
 				try {
 					if (toServer == null) { toServer = new PrintWriter(server.getOutputStream(), true); }
@@ -108,6 +130,18 @@ public class MyClient extends AbstractChatClient {
 			}
 		}
 	}
+	
+	public void disconnected() {
+		running = false;
+		
+		try {
+			this.server.close();
+			gui.pushChatMessage("Server ist offline.");
+			gui.setSymbolColor(Color.RED);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 
 	@Override
 	public void disconnect() {
@@ -115,6 +149,7 @@ public class MyClient extends AbstractChatClient {
 			sendChatMessage("/logout");
 			running = false;
 			gui.pushChatMessage("Server Verbindung getrennt.");
+			gui.setSymbolColor(Color.RED);
 			try {
 				server.close();
 			} catch (IOException e) {
@@ -128,6 +163,7 @@ public class MyClient extends AbstractChatClient {
 		if (running) {
 			disconnect();
 		}
+		System.exit(0);
 	}
 
 }

@@ -10,9 +10,13 @@ import java.util.concurrent.Semaphore;
 
 public class TCPClient extends Thread {
 	
+	/**
+	 * Die Berechtigungen, die existieren
+	 */
 	public static enum PERMISSION {
 		CHAT, WHISPER
 	}
+
 	private static int ID_GEN = 0;
 	
 	private Socket socket;
@@ -24,6 +28,9 @@ public class TCPClient extends Thread {
 	private String uname;
 	private int id;
 	
+	/**
+	 * Die Berechtigungen eines Clients
+	 */
 	private HashMap<PERMISSION, Boolean> permissions = new HashMap<PERMISSION, Boolean>();
 	
 	public TCPClient (Socket so) {
@@ -35,15 +42,29 @@ public class TCPClient extends Thread {
 		
 		ID_GEN += 1;
 		
-		// Beim erstmaligen Verbinden darf jeder Client chatten.
+		// Beim erstmaligen Verbinden darf jeder Client chatten und flüstern.
 		this.promote(PERMISSION.CHAT);
 		this.promote(PERMISSION.WHISPER);
 	}
 	
+	/**
+	 * Eine Nachricht an einen Client schicken
+	 * Ruft den "Sender" Thread auf
+	 * @param message
+	 */
 	public void pushMessage (MessageProtocol message) {
 		this.sender.pushMessage(message.toString());
 	}
 	
+	/**
+	 * Eine Nachricht an den Client schicken
+	 * Wenn sanitized == true, wird der command teil der nachricht entfernt.
+	 * 
+	 * Beispiel: "/private test abc" => "abc"
+	 * 
+	 * @param message
+	 * @param sanitized
+	 */
 	public void pushMessage (MessageProtocol message, boolean sanitized) {
 		if (sanitized) {
 			this.sender.pushMessage(message.toSanitizedString());
@@ -52,20 +73,37 @@ public class TCPClient extends Thread {
 		}
 	}
 	
+	/**
+	 * Prüft, ob der Nutzer die Berechtigung hat
+	 * @param perm
+	 * @return
+	 */
 	public boolean hasPermission (PERMISSION perm) {
 		return permissions.get(perm) == true;
 	}
 	
+	/**
+	 * Gibt dem Nutzer eine neue Berechtigung
+	 * @param perm
+	 */
 	public void promote (PERMISSION perm) {
 		this.permissions.put(perm, true);
 	}
 	
+	/**
+	 * Entzieht dem Nutzer eine Berechtigung
+	 * @param perm
+	 */
 	public void demote (PERMISSION perm) {
 		if (this.hasPermission(perm)) {
 			this.permissions.put(perm, false);
 		}
 	}
 	
+	/**
+	 * Gibt die Socket Verbindung zurück
+	 * @return
+	 */
 	public Socket getConnection() {
 		return this.socket;
 	}
@@ -84,21 +122,32 @@ public class TCPClient extends Thread {
 	
 	public void run () {
 		active = true;
+		// Startet einen Receiver Thread, der in einer Schleife auf eingehende Nachrichten wartet.
 		receiver.start();
+		
+		// Startet einen Sender Thread, der ausgehende Nachrichten abarbeitet
 		sender.start();
 	}
 	
 	public void shutdown () {
-		System.out.println("shut");
+		this.cntrl.clientDisconnected(this);
 		active = false;
-		this.receiver.shutdown();
-		this.sender.shutdown();
+		try {
+			this.socket.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void disconnect () {
+		this.shutdown();
 	}
 	
 	private class SendThread extends Thread {
 		Semaphore queue = new Semaphore(0);
 		PrintWriter pr = null;
 		
+		@SuppressWarnings("unused")
 		public void shutdown () {
 			if (pr != null) {
 				pr.close();
@@ -134,6 +183,7 @@ public class TCPClient extends Thread {
 	private class ReceiveThread extends Thread {
 		BufferedReader clientIn = null;
 		
+		@SuppressWarnings("unused")
 		public void shutdown () {
 			if (clientIn != null) {
 				try {
@@ -161,6 +211,10 @@ public class TCPClient extends Thread {
 				try {
 					input = clientIn.readLine();
 					
+					if (input == null) {
+						TCPClient.this.shutdown();
+					}
+					
 					if (input != null && input.startsWith("#STARTOF") && active) {
 						while (!(input = clientIn.readLine()).startsWith("#ENDOF")) {
 							msg += input + "\n";
@@ -172,7 +226,7 @@ public class TCPClient extends Thread {
 					}
 					
 				} catch (IOException e) {
-					e.printStackTrace();
+					//e.printStackTrace();
 				}		
 			}
 		}
